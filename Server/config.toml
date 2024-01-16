@@ -1,0 +1,98 @@
+# Obfuscator configuration file
+
+[general]
+# General settings for the obfuscator
+# The input for the obfuscator
+input_file = "bot.py"
+# The output for the obfuscator
+output_file = "output.py"
+# Resolves local imports from the target file and obfuscates them aswell
+transitive = true
+# Manually includes these files in transitive mode, if the automatic import resolver doesn't find them
+manual_include = []
+# Skips the existence check of the output file. This WILL nuke the output file if it already exists
+overwrite_output_forcefully = false
+
+[logicTransformer]
+# Transforms boolean logic into confusing, but equally valid statements
+# Enables this transformer
+enabled = false
+
+[removeTypeHints]
+# Removes type hints
+# Enables this transformer
+enabled = false
+
+[fstrToFormatSeq]
+# Converts F-Strings to their str.format equivalent
+# Enables this transformer
+enabled = false
+
+[encodeStrings]
+# Encodes strings to make them harder to read
+# Enables this transformer
+enabled = false
+# How to transform the strings
+# Mode chararray is best used with the intObfuscator transformer
+# Available modes: b64lzma, chararray, xortable
+mode = "b64lzma"
+
+[floatsToComplex]
+# Converts floats to a representation of them on the complex number plane, then converts them back at runtime
+# Warning: float precision might change some numbers in ways you don't want, please open a bug report if you find such a case
+# Enables this transformer
+enabled = false
+
+[intObfuscator]
+# Obscures int constants
+# Enables this transformer
+enabled = false
+# How to obfuscate int constants
+# Possible values: bits, complement, decode
+mode = "bits"
+
+[renamer]
+# Renames all members (methods, classes, fields, args)
+# Enables this transformer
+enabled = true
+# Format for the renamer. Will be queried using eval().
+# 'counter' is a variable incrementing with each name generated
+# 'kind' is either 'method', 'var', 'arg' or 'class', depending on the current element
+# 'get_counter(name)' is a method that increments a counter behind 'name', and returns its current value
+# 'random_identifier(length)' returns a valid python identifier, according to https://docs.python.org/3/reference/lexical_analysis.html#identifiers
+rename_format = "f'{kind}{get_counter(kind)}'"
+
+[replaceAttribSet]
+# Replaces direct attribute sets with setattr
+# Enables this transformer
+enabled = false
+
+[dynamicCodeObjLauncher]
+# Launches the program by constructing it from the ground up with dynamic code objects. This REQUIRES PYTHON 3.11
+# Enables this transformer
+enabled = false
+
+[varCollector]
+# Converts var access to a hidden eval()
+# Enables this transformer
+enabled = false
+
+[unicodeTransformer]
+# Converts names to equally valid, but weird looking unicode names
+# Does not work with compileFinalFiles, has to be source code
+# Enables this transformer
+enabled = false
+
+[compileFinalFiles]
+# Compiles all output files to .pyc
+# Enables this transformer
+enabled = true
+
+[packInPyz]
+# Packs all of the scripts into a .pyz file, creating an one file "executable". Specifically effective when used with multiple input files
+# Enables this transformer
+enabled = false
+# The file to start when the .pyz is started. File will be renamed to __main__.py inside the .pyz
+bootstrap_file = "__main__.py"
+# Encrypts all contents of the .pyz using a random RSA256 key
+encrypt = true

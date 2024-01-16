@@ -1,4 +1,3 @@
-import requests
 
 
 url = 'https://www.facebook.com/favicon.ico'
