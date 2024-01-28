@@ -9,11 +9,10 @@ import wmi
 import requests
 import cv2
 import pynput
-import signal
 
 
-TOKEN = "MTE5NTMzMTE1NzEwNjEwMjMzNA.G5ZiDa.SSbKCAJF0mP9SxQCrHoiTE2nSjvspXmyFYK5ng"
-WEBHOOK_URL = "https://discord.com/api/webhooks/1195633509755265055/PkPWgyJEy9nRZrxcWTMwR88AWjf6X9WoOzo1FC5kSevKrJtMWbOrsZDAA_qWCH79x0dF"
+TOKEN = ""
+WEBHOOK_URL = ""
 
 
 intents = discord.Intents.default()
@@ -173,20 +172,24 @@ async def on_message(message):
     elif message.content.startswith("play"):
         command = message.content
         command = command.replace("play ", "")
-        url = command
+        command = command.split()
+        url = command[0]
+        try:
+            wait_time = command[1]
+        except IndexError:
+            wait_time = 10
+
+        webhook = DiscordWebhook(url=WEBHOOK_URL, content='Audio playing.. Closing media player after ' + str(wait_time) + ' seconds!')
+        response = webhook.execute()
+
         r = requests.get(url, allow_redirects=True)
         open('sound.m4a', 'wb').write(r.content)
         os.system("sound.m4a")
 
-        time.sleep(7)
+        time.sleep(int(wait_time))
+
         os.remove("sound.m4a")
         os.system("TASKKILL /F /IM Microsoft.Media.Player.exe")
-
-
-
-
-        
-       
 
 
 client.run(TOKEN)
