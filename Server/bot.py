@@ -212,6 +212,7 @@ async def on_message(message):
         visit='http://{}'.format(site)
         webbrowser.open(visit)
     
+    
     elif message.content.startswith("record"):
         command = message.content
         command = command.replace("record ", "")
