@@ -14,8 +14,8 @@ import sounddevice as sd
 from scipy.io.wavfile import write
 
 
-TOKEN = "MTE5OTIwNDE5MzkyMDA5NDI3OQ.GDCA5Q.vQWZqAKShOHV43vEXioASreWJRqK1stosu4xBo"
-WEBHOOK_URL = "https://discord.com/api/webhooks/1199232245064544446/zw-KJgseC3OYaxYYN9okGzZJ3Y3tut2o24TcO1z_xG91KRV1ad3OUV54mE5ioj9UA5oZ"
+TOKEN = ""
+WEBHOOK_URL = ""
 
 intents = discord.Intents.default()
 intents.message_content = True
